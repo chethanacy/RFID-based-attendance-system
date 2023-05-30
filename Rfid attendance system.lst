@@ -1,0 +1,242 @@
+C51 COMPILER V9.60.0.0   RFID_ATTENDANCE_SYSTEM                                            06/27/2020 08:47:07 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE RFID_ATTENDANCE_SYSTEM
+OBJECT MODULE PLACED IN .\Objects\Rfid attendance system.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Rfid attendance system.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRI
+                    -NT(.\Listings\Rfid attendance system.lst) TABS(2) OBJECT(.\Objects\Rfid attendance system.obj)
+
+line level    source
+
+   1          /**************************************
+   2          Name: RFID Based Attendance System Using 8051 Microcontroller
+   3          Web:  https://StudyElectricTech.com
+   4          Date: 2020.06.26 
+   5          ***************************************
+   6          */
+   7          //library description
+   8          #include<reg51.h>
+   9          #include<string.h>
+  10          #include<stdio.h>
+  11          #define LCDPORT P1
+  12          
+  13          sbit rs=P1^0;
+  14          sbit rw=P1^1;
+  15          sbit en=P1^2;
+  16          sbit Motor1=P2^4;
+  17          sbit Motor2=P2^3;
+  18          sbit Speaker=P2^6;
+  19          char i,rx_data[50];
+  20          char rfid[13],ch=0;
+  21          int counter1, counter2, counter3;
+  22          unsigned char result[1];
+  23          
+  24           void delay(int itime)
+  25          {
+  26   1          int i,j;
+  27   1          for(i=0;i<itime;i++)
+  28   1          for(j=0;j<1275;j++);
+  29   1      }
+  30          
+  31          void daten()
+  32          {
+  33   1          rs=1;
+  34   1          rw=0;
+  35   1          en=1;
+  36   1          delay(5);
+  37   1          en=0;
+  38   1      }
+  39          
+  40          void lcddata(unsigned char ch)
+  41          {
+  42   1          LCDPORT=ch & 0xf0;
+  43   1          daten();
+  44   1          LCDPORT=(ch<<4) & 0xf0;
+  45   1          daten();
+  46   1      }
+  47          
+  48          void cmden(void)
+  49          {
+  50   1          rs=0;
+  51   1          en=1;
+  52   1          delay(5);
+  53   1          en=0;
+  54   1      }
+C51 COMPILER V9.60.0.0   RFID_ATTENDANCE_SYSTEM                                            06/27/2020 08:47:07 PAGE 2   
+
+  55          
+  56          void lcdcmd(unsigned char ch)
+  57          {
+  58   1          LCDPORT=ch & 0xf0;
+  59   1          cmden();
+  60   1          LCDPORT=(ch<<4) & 0xf0;
+  61   1          cmden();
+  62   1      }
+  63          
+  64          void lcdstring(char *str)
+  65          {
+  66   1          while(*str)
+  67   1          {
+  68   2              lcddata(*str);
+  69   2              str++;
+  70   2          }
+  71   1      }
+  72          
+  73          void lcd_init(void)
+  74          {
+  75   1          lcdcmd(0x02);
+  76   1          lcdcmd(0x28);
+  77   1          lcdcmd(0x0e);
+  78   1          lcdcmd(0x01);
+  79   1      }
+  80          
+  81          void uart_init()
+  82          {
+  83   1       TMOD=0x20;
+  84   1       SCON=0x50;
+  85   1       TH1=0xfd;
+  86   1       TR1=1;
+  87   1      }
+  88          char rxdata()
+  89          {
+  90   1        while(!RI);
+  91   1          ch=SBUF;    
+  92   1          RI=0;
+  93   1          return ch;
+  94   1      }
+  95          
+  96          void main()
+  97          {
+  98   1          Speaker=1;
+  99   1          uart_init();
+ 100   1          lcd_init();
+ 101   1          lcdstring("---RFID Based---");
+ 102   1          lcdcmd(0xc0);
+ 103   1          lcdstring("Attendance Proj"); 
+ 104   1          delay(500);
+ 105   1          lcd_init();
+ 106   1          lcdstring("--StudyElectric--");
+ 107   1          lcdcmd(0xc0);
+ 108   1          lcdstring("----Tech.com----"); 
+ 109   1          delay(400);
+ 110   1          while(1)
+ 111   1          {
+ 112   2              lcdcmd(1);
+ 113   2              lcdstring("Scan Your Card:");
+ 114   2              lcdcmd(0xc0);
+ 115   2              i=0;
+ 116   2              for(i=0;i<12;i++)
+C51 COMPILER V9.60.0.0   RFID_ATTENDANCE_SYSTEM                                            06/27/2020 08:47:07 PAGE 3   
+
+ 117   2              rfid[i]=rxdata();
+ 118   2              rfid[i]='\0';
+ 119   2              lcdcmd(1);
+ 120   2            lcdstring("Rfid No. is:");
+ 121   2              lcdcmd(0xc0);
+ 122   2              for(i=0;i<12;i++)
+ 123   2              lcddata(rfid[i]);
+ 124   2              delay(100);
+ 125   2              if(strncmp(rfid,"10035AD856C1",12)==0)
+ 126   2              {
+ 127   3                  counter1++;
+ 128   3                  lcdcmd(1);             
+ 129   3                  lcdstring(" Atttended");
+ 130   3                  delay(200);
+ 131   3                  lcdcmd(1);
+ 132   3                  lcdstring(" Eng.Mohamed ");
+ 133   3                  lcdcmd(0xc0);
+ 134   3                  lcdstring("Attnd. No.: ");
+ 135   3                  sprintf(result, "%d", counter1);
+ 136   3                  lcdstring(result);
+ 137   3                  
+ 138   3                  Motor1=1;
+ 139   3                  Motor2=0;
+ 140   3                  delay(300);
+ 141   3                  Motor1=0;
+ 142   3                  Motor2=0;
+ 143   3                  delay(200);
+ 144   3                  Motor1=0;
+ 145   3                  Motor2=1;
+ 146   3              }
+ 147   2              
+ 148   2              else if(strncmp(rfid,"1600ADC369A1",12)==0)
+ 149   2                  {
+ 150   3                  counter2++;
+ 151   3                  lcdcmd(1);
+ 152   3                  lcdstring(" Attended");
+ 153   3                  delay(200);
+ 154   3                  lcdcmd(1);
+ 155   3                  lcdstring(" B.Obama ");
+ 156   3                  lcdcmd(0xc0);
+ 157   3                  lcdstring("Attnd. No.: ");
+ 158   3                  sprintf(result, "%d", counter2);
+ 159   3                  lcdstring(result);
+ 160   3                  
+ 161   3                  Motor1=1;
+ 162   3                  Motor2=0;
+ 163   3                  delay(300);
+ 164   3                  Motor1=0;
+ 165   3                  Motor2=0;
+ 166   3                  delay(200);
+ 167   3                  Motor1=0;
+ 168   3                  Motor2=1;
+ 169   3                  delay(300);
+ 170   3                  Motor1=0;
+ 171   3                  Motor2=0;
+ 172   3            }
+ 173   2                  
+ 174   2                      else if(strncmp(rfid,"1600ABCD147A",12)==0)
+ 175   2                  {
+ 176   3                      counter3++;
+ 177   3                  lcdcmd(1);
+ 178   3                  lcdstring(" Attended");
+C51 COMPILER V9.60.0.0   RFID_ATTENDANCE_SYSTEM                                            06/27/2020 08:47:07 PAGE 4   
+
+ 179   3                  delay(200);
+ 180   3                  lcdcmd(1);
+ 181   3                  lcdstring(" D.j.TRUMP ");
+ 182   3                  lcdcmd(0xc0);
+ 183   3                  lcdstring("Attnd. No.: ");
+ 184   3                  sprintf(result, "%d", counter3);
+ 185   3                  lcdstring(result);
+ 186   3                  
+ 187   3                  Motor1=1;
+ 188   3                  Motor2=0;
+ 189   3                  delay(300);
+ 190   3                  Motor1=0;
+ 191   3                  Motor2=0;
+ 192   3                  delay(200);
+ 193   3                  Motor1=0;
+ 194   3                  Motor2=1;
+ 195   3                  delay(300);
+ 196   3                  Motor1=0;
+ 197   3                  Motor2=0;
+ 198   3      
+ 199   3                  }
+ 200   2      
+ 201   2              else 
+ 202   2              {
+ 203   3                 lcdcmd(1);
+ 204   3                 lcdstring("Card don't exist");
+ 205   3                 lcdcmd(0xc0);
+ 206   3                 lcdstring("Try Another Card");
+ 207   3                 Speaker=0;
+ 208   3                 delay(300);
+ 209   3                 Speaker=1;
+ 210   3              }
+ 211   2        }
+ 212   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    775    ----
+   CONSTANT SIZE    =    243    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     72       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
